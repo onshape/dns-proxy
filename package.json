@@ -9,9 +9,11 @@
   "preferGlobal": true,
   "author": "Erik Kristensen <erik@erikkristensen.com>",
   "license": "MIT",
-  "repository": "ekristen/dns-proxy",
+  "repository": "mdbarr/dns-proxy",
   "scripts": {
     "start": "dns-proxy.js",
+    "build": "docker build -t mdbarr/dns-proxy .",
+    "docker": "docker run -d --rm --name dns-proxy -p 127.0.0.1:53:53/tcp -p 127.0.0.1:53:53/udp --cap-add=NET_ADMIN -v `pwd`/.dnsproxyrc:/usr/src/app/.dnsproxyrc mdbarr/dns-proxy",
     "test": "npm run test:standard",
     "test:standard": "standard *.js",
     "pkg": "pkg --out-dir release --targets node7-macos-x64,node7-alpine-x64,node7-linux-x64,node7-win dns-proxy.js"
