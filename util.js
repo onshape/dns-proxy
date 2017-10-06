@@ -32,3 +32,14 @@ module.exports.createAnswer = function (query, answer) {
 
   return res
 }
+
+const regExpPattern = /^\/(.*?)\/([gim]*)$/
+const escapePattern = /[|\\{}()[\]^$+*?.]/g
+
+module.exports.toRegularExpression = function (string) {
+  const parts = string.match(regExpPattern)
+  if (parts) {
+    return new RegExp(parts[1], parts[2])
+  }
+  return new RegExp('^' + string.replace(escapePattern, '\\$&') + '$')
+}

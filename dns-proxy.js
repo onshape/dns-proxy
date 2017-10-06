@@ -74,7 +74,8 @@ server.on('message', function (message, rinfo) {
   logdebug('query: %j', query)
 
   Object.keys(config.hosts).forEach(function (h) {
-    if (domain === h) {
+    const hostPattern = util.toRegularExpression(h)
+    if (hostPattern.test(domain)) {
       let answer = config.hosts[h]
       if (typeof config.hosts[config.hosts[h]] !== 'undefined') {
         answer = config.hosts[config.hosts[h]]
@@ -94,10 +95,7 @@ server.on('message', function (message, rinfo) {
   }
 
   Object.keys(config.domains).forEach(function (s) {
-    let sLen = s.length
-    let dLen = domain.length
-
-    if (domain.indexOf(s) >= 0 && domain.indexOf(s) === (dLen - sLen)) {
+    if (domain.endsWith(s)) {
       let answer = config.domains[s]
       if (typeof config.domains[config.domains[s]] !== 'undefined') {
         answer = config.domains[config.domains[s]]
@@ -117,7 +115,7 @@ server.on('message', function (message, rinfo) {
   }
 
   Object.keys(config.servers).forEach(function (s) {
-    if (domain.indexOf(s) !== -1) {
+    if (domain.endsWith(s)) {
       nameserver = config.servers[s]
     }
   })
