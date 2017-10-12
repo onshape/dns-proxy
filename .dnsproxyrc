@@ -1,0 +1,7 @@
+{
+  "host": "0.0.0.0",
+  "hosts": {
+    "/enterprise-test-.*\\.dev\\.onshape\\.com/": "127.0.0.1"
+  }
+}
+
