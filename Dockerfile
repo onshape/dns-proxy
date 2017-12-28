@@ -1,10 +1,10 @@
-FROM node:boron
+FROM node:carbon-alpine
 
 WORKDIR /usr/src/app
 
-COPY package.json .
+COPY package.json yarn.lock ./
 
-RUN npm install
+RUN yarn install
 
 COPY . .
 
