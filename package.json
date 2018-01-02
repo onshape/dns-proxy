@@ -12,10 +12,10 @@
   "repository": "mdbarr/dns-proxy",
   "scripts": {
     "build": "docker build -t mdbarr/dns-proxy .",
-    "docker": "docker run -d --rm --name dns-proxy -p 127.0.0.1:53:53/tcp -p 127.0.0.1:53:53/udp --cap-add=NET_ADMIN -v `pwd`/.dnsproxyrc:/usr/src/app/.dnsproxyrc mdbarr/dns-proxy",
+    "docker": "docker run -d --rm --name dns-proxy -p 127.0.0.1:53:53/tcp -p 127.0.0.1:53:53/udp -p 127.0.0.1:5959:5959 --cap-add=NET_ADMIN -v `pwd`/.dnsproxyrc:/usr/src/app/.dnsproxyrc mdbarr/dns-proxy",
     "fix": "./node_modules/.bin/eslint --fix *.js || exit 0",
     "lint": "./node_modules/.bin/eslint *.js || exit 0",
-    "start": "dns-proxy.js"
+    "start": "./index.js"
   },
   "dependencies": {
     "debug": "^2.6.0",
