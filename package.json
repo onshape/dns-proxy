@@ -3,7 +3,7 @@
   "version": "0.7.0",
   "description": "Simple DNS Proxy written in Node.JS. Override hosts, domains, or tlds. Redirect certain domains to different nameservers.",
   "bin": {
-    "dns-proxy": "dns-proxy.js"
+    "dns-proxy": "index.js"
   },
   "main": "dns-proxy.js",
   "preferGlobal": true,

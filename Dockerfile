@@ -11,4 +11,4 @@ COPY . .
 EXPOSE 53
 EXPOSE 53/udp
 
-CMD [ "node", "./dns-proxy.js" ]
+CMD [ "node", "./index.js" ]
