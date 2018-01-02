@@ -1,146 +1,85 @@
-const fs = require('fs')
-const rc = require('rc')
-const dgram = require('dgram')
-const packet = require('native-dns-packet')
+'use strict';
 
-const util = require('./util.js')
+const dgram = require('dgram');
+const packet = require('native-dns-packet');
+const util = require('./util.js');
 
-const defaults = {
-  port: 53,
-  host: '127.0.0.1',
-  logging: 'dnsproxy:query,dnsproxy:info',
-  nameservers: [
-    '8.8.8.8',
-    '8.8.4.4'
-  ],
-  servers: {},
-  domains: {
-    'dev': '127.0.0.1'
-  },
-  hosts: {
-    'devlocal': '127.0.0.1'
-  },
-  fallback_timeout: 350,
-  reload_config: true
-}
+module.exports = function(config, logger) {
+  ////////////////////////////////////////////////////////////
+  // Create and boot the DNS Server
 
-let config = rc('dnsproxy', defaults)
+  const dnsServer = dgram.createSocket('udp4');
 
-process.env.DEBUG_FD = process.env.DEBUG_FD || 1
-process.env.DEBUG = process.env.DEBUG || config.logging
-let d = process.env.DEBUG.split(',')
-d.push('dnsproxy:error')
-process.env.DEBUG = d.join(',')
+  dnsServer.on('listening', function () {
+    console.log('dns-proxy DNS Server listening at dns://%s:%s', config.host, config.port);
+  });
 
-const loginfo = require('debug')('dnsproxy:info')
-const logdebug = require('debug')('dnsproxy:debug')
-const logquery = require('debug')('dnsproxy:query')
-const logerror = require('debug')('dnsproxy:error')
+  dnsServer.on('error', function (err) {
+    logger.error('udp socket error');
+    logger.error(err);
+  });
 
-if (config.reload_config === true) {
-  var configFile = config.config
-  fs.watchFile(configFile, function (curr, prev) {
-    loginfo('config file changed, reloading config options')
-    try {
-      config = rc('dnsproxy', defaults)
-    } catch (e) {
-      logerror('error reloading configuration')
-      logerror(e)
-    }
-  })
-}
+  dnsServer.on('message', function (message, rinfo) {
+    let nameserver = config.nameservers[0];
 
-logdebug('options: %j', config)
+    const query = packet.parse(message);
+    const domain = query.question[0].name;
+    const type = query.question[0].type;
 
-const server = dgram.createSocket('udp4')
+    logger.debug('query: %j', query);
 
-server.on('listening', function () {
-  loginfo('we are up and listening at %s on %s', config.host, config.port)
-})
+    for (const host in config.hosts) {
+      const hostPattern = util.toRegularExpression(host);
+      if (hostPattern.test(domain)) {
+        let answer = config.hosts[host];
+        if (typeof config.hosts[config.hosts[host]] !== 'undefined') {
+          answer = config.hosts[config.hosts[host]];
+        }
 
-server.on('error', function (err) {
-  logerror('udp socket error')
-  logerror(err)
-})
+        logger.query('type: host, domain: %s, answer: %s, source: %s:%s, size: %d', domain, config.hosts[host], rinfo.address, rinfo.port, rinfo.size);
 
-server.on('message', function (message, rinfo) {
-  let returner = false
-  let nameserver = config.nameservers[0]
+        const res = util.createAnswer(query, answer);
+        dnsServer.send(res, 0, res.length, rinfo.port, rinfo.address);
 
-  const query = packet.parse(message)
-  const domain = query.question[0].name
-  const type = query.question[0].type
-
-  logdebug('query: %j', query)
-
-  Object.keys(config.hosts).forEach(function (h) {
-    const hostPattern = util.toRegularExpression(h)
-    if (hostPattern.test(domain)) {
-      let answer = config.hosts[h]
-      if (typeof config.hosts[config.hosts[h]] !== 'undefined') {
-        answer = config.hosts[config.hosts[h]]
+        return;
       }
-
-      logquery('type: host, domain: %s, answer: %s, source: %s:%s, size: %d', domain, config.hosts[h], rinfo.address, rinfo.port, rinfo.size)
-
-      let res = util.createAnswer(query, answer)
-      server.send(res, 0, res.length, rinfo.port, rinfo.address)
-
-      returner = true
     }
-  })
 
-  if (returner) {
-    return
-  }
+    for (const suffix in config.domains) {
+      if (domain.endsWith(suffix)) {
+        let answer = config.domains[suffix];
+        if (typeof config.domains[config.domains[suffix]] !== 'undefined') {
+          answer = config.domains[config.domains[suffix]];
+        }
 
-  Object.keys(config.domains).forEach(function (s) {
-    if (domain.endsWith(s)) {
-      let answer = config.domains[s]
-      if (typeof config.domains[config.domains[s]] !== 'undefined') {
-        answer = config.domains[config.domains[s]]
+        logger.query('type: server, domain: %s, answer: %s, source: %s:%s, size: %d', domain, config.domains[suffix], rinfo.address, rinfo.port, rinfo.size);
+
+        const res = util.createAnswer(query, answer);
+        dnsServer.send(res, 0, res.length, rinfo.port, rinfo.address);
+
+        return;
       }
-
-      logquery('type: server, domain: %s, answer: %s, source: %s:%s, size: %d', domain, config.domains[s], rinfo.address, rinfo.port, rinfo.size)
-
-      let res = util.createAnswer(query, answer)
-      server.send(res, 0, res.length, rinfo.port, rinfo.address)
-
-      returner = true
     }
-  })
 
-  if (returner) {
-    return
-  }
-
-  Object.keys(config.servers).forEach(function (s) {
-    if (domain.endsWith(s)) {
-      nameserver = config.servers[s]
+    for (const server in config.servers) {
+      if (domain.endsWith(server)) {
+        nameserver = config.servers[server];
+      }
     }
-  })
-  let nameParts = nameserver.split(':')
-  nameserver = nameParts[0]
-  let port = nameParts[1] || 53
-  let fallback
-  (function queryns (message, nameserver) {
-    const sock = dgram.createSocket('udp4')
-    sock.send(message, 0, message.length, port, nameserver, function () {
-      fallback = setTimeout(function () {
-        queryns(message, config.nameservers[0])
-      }, config.fallback_timeout)
-    })
-    sock.on('error', function (err) {
-      logerror('Socket Error: %s', err)
-      process.exit(5)
-    })
-    sock.on('message', function (response) {
-      clearTimeout(fallback)
-      logquery('type: primary, nameserver: %s, query: %s, type: %s, answer: %s, source: %s:%s, size: %d', nameserver, domain, util.records[type] || 'unknown', util.listAnswer(response), rinfo.address, rinfo.port, rinfo.size)
-      server.send(response, 0, response.length, rinfo.port, rinfo.address)
-      sock.close()
-    })
-  }(message, nameserver))
-})
 
-server.bind(config.port, config.host)
+    const nameParts = nameserver.split(':');
+    nameserver = nameParts[0];
+    const port = nameParts[1] || 53;
+
+    util.queryNameserver(config, message, nameserver, port, function(error, response) {
+      if (error) {
+        logger.error('Socket Error: %s', error);
+      } else {
+        logger.query('type: primary, nameserver: %s, query: %s, type: %s, answer: %s, source: %s:%s, size: %d', nameserver, domain, util.records[type] || 'unknown', util.listAnswer(response), rinfo.address, rinfo.port, rinfo.size);
+        dnsServer.send(response, 0, response.length, rinfo.port, rinfo.address);
+      }
+    });
+  });
+
+  dnsServer.bind(config.port, config.host);
+};
