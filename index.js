@@ -9,7 +9,7 @@ const rc = require('rc');
 
 const defaults = {
   port: 53,
-  host: '127.0.0.1',
+  host: '0.0.0.0',
   logging: 'dnsproxy:query,dnsproxy:info',
 
   // Default nameservers
@@ -32,7 +32,7 @@ const defaults = {
   // API Server config
   api: {
     enabled: true,
-    host: '127.0.0.1',
+    host: '0.0.0.0',
     port: 5959,
     key: 'dns-proxy-t7w!184$A6*55WI'
   }
