@@ -56,21 +56,21 @@ function createAnswer(query, answer) {
 function queryNameserver(config, message, nameserver, port, callback) {
   const sock = dgram.createSocket('udp4');
 
-  let fallback;
+  let timeout;
 
   sock.send(message, 0, message.length, port, nameserver, function () {
-    fallback = setTimeout(function () {
-      queryNameserver(message, config.nameservers[0]);
+    timeout = setTimeout(function () {
+      sock.send(message, 0, message.length, port, config.nameservers[0]);
     }, config.fallback_timeout);
   });
 
   sock.on('error', function (error) {
-    clearTimeout(fallback);
+    clearTimeout(timeout);
     callback(error);
   });
 
   sock.on('message', function (response) {
-    clearTimeout(fallback);
+    clearTimeout(timeout);
     sock.close();
     callback(null, response);
   });
