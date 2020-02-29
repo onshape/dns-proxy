@@ -14,8 +14,9 @@ const defaults = {
 
   // Default nameservers
   nameservers: [
-    '8.8.8.8',
-    '8.8.4.4'
+    '10.80.16.142',
+    '10.80.16.143',
+    '10.152.224.74'
   ],
   // Domain specific nameservers
   servers: {},
