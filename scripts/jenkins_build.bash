@@ -6,7 +6,7 @@ fi
 
 echo "Building DNS proxy docker image"
 . ./buildSrc/tools/bash/buildtools.bash
-getBuildTools ada7fa46229a53f8ba5f8883c8e3f79188744205
+btGetBuildTools ada7fa46229a53f8ba5f8883c8e3f79188744205
 dockerRegistryUrl=$(getDockerRegistryUrl)
 
 itemName="dns-proxy"
