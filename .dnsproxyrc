@@ -5,11 +5,11 @@
     "devdrawings": "127.0.0.1",
     "devdrawings.dev.onshape.com": "127.0.0.1",
     "localhost.dev.onshape.com": "127.0.0.1",
-    "/*googletagmanager.com/": "127.0.0.1",
-    "/*hs-analytics.net/": "127.0.0.1",
-    "/*ads-twitter.com/": "127.0.0.1",
-    "/*facebook.net/": "127.0.0.1",
-    "/*adroll.com/": "127.0.0.1"
+    "/googletagmanager\\.com$/": "127.0.0.1",
+    "/hs-analytics\\.net$/": "127.0.0.1",
+    "/ads-twitter\\.com$/": "127.0.0.1",
+    "/facebook\\.net$/": "127.0.0.1",
+    "/adroll\\.com$/": "127.0.0.1"
   },
   "api": {
     "enabled": true,
