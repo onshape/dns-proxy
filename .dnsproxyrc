@@ -9,7 +9,8 @@
     "/hs-analytics\\.net$/": "127.0.0.1",
     "/ads-twitter\\.com$/": "127.0.0.1",
     "/facebook\\.net$/": "127.0.0.1",
-    "/adroll\\.com$/": "127.0.0.1"
+    "/adroll\\.com$/": "127.0.0.1",
+    "/linkedin\\.com$/": "127.0.0.1"
   },
   "api": {
     "enabled": true,
